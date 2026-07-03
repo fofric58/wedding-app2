@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yönetici Girişi — Selenay & Ahmet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@400;500&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --ivory: #FBF6EE;
+        --gold: #C9A66B;
+        --gold-dark: #9C7A3C;
+        --charcoal: #33302B;
+        --line: #E6DCC8;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Jost', sans-serif;
+        background: radial-gradient(circle at 50% -10%, #fffdf8 0%, var(--ivory) 60%, #f3ead7 100%);
+        padding: 16px;
+    }
+    .card {
+        background: #fff;
+        width: 100%;
+        max-width: 360px;
+        padding: 40px 32px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        box-shadow: 0 20px 60px rgba(156,122,60,0.15);
+        text-align: center;
+    }
+    h2 {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 28px;
+        margin: 0 0 24px;
+        color: var(--charcoal);
+    }
+    input {
+        width: 100%;
+        padding: 13px 16px;
+        margin-bottom: 14px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--ivory);
+        font-family: 'Jost', sans-serif;
+        font-size: 15px;
+        outline: none;
+    }
+    input:focus { border-color: var(--gold); }
+    button {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        background: var(--gold-dark);
+        color: #fff;
+        font-family: 'Jost', sans-serif;
+        font-size: 15.5px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-top: 6px;
+    }
+    .error {
+        color: #b5504a;
+        font-size: 13.5px;
+        margin-bottom: 14px;
+    }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🔐 Yönetici Girişi</h2>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="POST">
+        <input name="username" placeholder="Kullanıcı adı" autocomplete="username" required>
+        <input name="password" type="password" placeholder="Şifre" autocomplete="current-password" required>
+        <button type="submit">Giriş Yap</button>
+    </form>
+</div>
+
+</body>
+</html>

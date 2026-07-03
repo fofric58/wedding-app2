@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Selenay & Ahmet — Düğün Fotoğrafları</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --ivory: #FBF6EE;
+        --gold: #C9A66B;
+        --gold-dark: #9C7A3C;
+        --blush: #F4E3DE;
+        --charcoal: #33302B;
+        --charcoal-soft: #6B655C;
+        --line: #E6DCC8;
+        --success: #7C9473;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Jost', sans-serif;
+        background: radial-gradient(circle at 50% -10%, #fffdf8 0%, var(--ivory) 55%, #f3ead7 100%);
+        color: var(--charcoal);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 28px 16px;
+        overflow-x: hidden;
+    }
+
+    #confetti-canvas {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 999;
+    }
+
+    .card {
+        position: relative;
+        background: #ffffff;
+        width: 100%;
+        max-width: 420px;
+        border-radius: 28px;
+        padding: 44px 32px 36px;
+        box-shadow: 0 20px 60px rgba(156, 122, 60, 0.16), 0 2px 8px rgba(0,0,0,0.04);
+        text-align: center;
+        border: 1px solid var(--line);
+    }
+
+    .monogram {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 15px;
+        letter-spacing: 6px;
+        color: var(--gold-dark);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    h1 {
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 600;
+        font-size: 46px;
+        line-height: 1;
+        margin: 0 0 4px;
+        color: var(--charcoal);
+    }
+
+    h1 .amp {
+        font-style: italic;
+        color: var(--gold);
+        padding: 0 6px;
+    }
+
+    .divider {
+        width: 60px;
+        height: 1px;
+        background: var(--gold);
+        margin: 16px auto 18px;
+        opacity: 0.6;
+    }
+
+    .subtitle {
+        font-size: 15.5px;
+        color: var(--charcoal-soft);
+        margin: 0 0 28px;
+        line-height: 1.5;
+    }
+
+    .field-label {
+        display: block;
+        text-align: left;
+        font-size: 12.5px;
+        letter-spacing: 0.5px;
+        color: var(--charcoal-soft);
+        margin: 0 0 6px 2px;
+    }
+
+    input[type="text"] {
+        width: 100%;
+        font-family: 'Jost', sans-serif;
+        font-size: 15px;
+        padding: 13px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--ivory);
+        color: var(--charcoal);
+        margin-bottom: 20px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+        border-color: var(--gold);
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    .upload-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 2px dashed var(--gold);
+        border-radius: 20px;
+        padding: 34px 16px;
+        cursor: pointer;
+        background: linear-gradient(180deg, #FFFDF9, var(--blush) 160%);
+        transition: transform 0.15s ease, border-color 0.2s;
+    }
+
+    .upload-btn:active {
+        transform: scale(0.98);
+    }
+
+    .upload-btn.has-files {
+        border-style: solid;
+    }
+
+    .upload-icon {
+        font-size: 34px;
+        line-height: 1;
+    }
+
+    .upload-btn .main-text {
+        font-size: 16.5px;
+        font-weight: 500;
+        color: var(--charcoal);
+    }
+
+    .upload-btn .sub-text {
+        font-size: 13px;
+        color: var(--charcoal-soft);
+    }
+
+    .send-btn {
+        width: 100%;
+        margin-top: 18px;
+        background: var(--gold-dark);
+        color: #fff;
+        border: none;
+        padding: 16px;
+        font-family: 'Jost', sans-serif;
+        font-size: 16px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.15s;
+    }
+
+    .send-btn:active {
+        transform: scale(0.98);
+    }
+
+    .send-btn:disabled {
+        background: #cbbfa2;
+        cursor: not-allowed;
+    }
+
+    .progress-wrap {
+        margin-top: 18px;
+        display: none;
+    }
+
+    .progress-track {
+        width: 100%;
+        height: 8px;
+        background: var(--ivory);
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--gold), var(--gold-dark));
+        border-radius: 999px;
+        transition: width 0.15s ease;
+    }
+
+    .progress-label {
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--charcoal-soft);
+    }
+
+    #status {
+        margin-top: 16px;
+        font-size: 14.5px;
+        min-height: 20px;
+    }
+
+    #status.success { color: var(--success); font-weight: 500; }
+    #status.error { color: #b5504a; font-weight: 500; }
+
+    .footer-note {
+        margin-top: 26px;
+        font-size: 12px;
+        color: var(--charcoal-soft);
+        opacity: 0.7;
+    }
+</style>
+</head>
+
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<div class="card">
+    <div class="monogram">Düğünümüze Hoş Geldiniz</div>
+    <h1>Selenay<span class="amp">&amp;</span>Ahmet</h1>
+    <div class="divider"></div>
+    <p class="subtitle">O günden aklınızda kalan anları bizimle paylaşın 💛</p>
+
+    <label class="field-label" for="guestName">İsminiz (isteğe bağlı)</label>
+    <input type="text" id="guestName" placeholder="Adınız Soyadınız">
+
+    <input type="file" id="files" accept="image/*" multiple>
+    <label for="files" class="upload-btn" id="uploadLabel">
+        <span class="upload-icon">📸</span>
+        <span class="main-text">Fotoğraf Seç</span>
+        <span class="sub-text" id="fileHint">Birden fazla fotoğraf seçebilirsiniz</span>
+    </label>
+
+    <button class="send-btn" id="sendBtn" onclick="uploadPhotos()" disabled>Yükle</button>
+
+    <div class="progress-wrap" id="progressWrap">
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-label" id="progressLabel">Yükleniyor... %0</div>
+    </div>
+
+    <div id="status"></div>
+
+    <div class="footer-note">Fotoğraflarınız güvenle saklanıyor, teşekkür ederiz.</div>
+</div>
+
+<script>
+const filesInput = document.getElementById("files");
+const uploadLabel = document.getElementById("uploadLabel");
+const fileHint = document.getElementById("fileHint");
+const sendBtn = document.getElementById("sendBtn");
+const statusEl = document.getElementById("status");
+const progressWrap = document.getElementById("progressWrap");
+const progressFill = document.getElementById("progressFill");
+const progressLabel = document.getElementById("progressLabel");
+
+filesInput.addEventListener("change", () => {
+    const count = filesInput.files.length;
+    if (count > 0) {
+        uploadLabel.classList.add("has-files");
+        fileHint.textContent = count === 1 ? "1 fotoğraf seçildi" : `${count} fotoğraf seçildi`;
+        sendBtn.disabled = false;
+    } else {
+        uploadLabel.classList.remove("has-files");
+        fileHint.textContent = "Birden fazla fotoğraf seçebilirsiniz";
+        sendBtn.disabled = true;
+    }
+    statusEl.textContent = "";
+    statusEl.className = "";
+});
+
+function uploadPhotos() {
+    const files = filesInput.files;
+    if (files.length === 0) {
+        showStatus("Lütfen fotoğraf seçin", "error");
+        return;
+    }
+
+    const formData = new FormData();
+    const name = document.getElementById("guestName").value.trim();
+    if (name) formData.append("name", name);
+    for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+    }
+
+    sendBtn.disabled = true;
+    statusEl.textContent = "";
+    statusEl.className = "";
+    progressWrap.style.display = "block";
+    progressFill.style.width = "0%";
+    progressLabel.textContent = "Yükleniyor... %0";
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/upload");
+
+    xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressFill.style.width = percent + "%";
+            progressLabel.textContent = `Yükleniyor... %${percent}`;
+        }
+    };
+
+    xhr.onload = () => {
+        progressWrap.style.display = "none";
+        let data = {};
+        try { data = JSON.parse(xhr.responseText); } catch (e) {}
+
+        if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+            showStatus("✅ Yüklendi, teşekkür ederiz ❤️", "success");
+            fireConfetti();
+            filesInput.value = "";
+            document.getElementById("guestName").value = "";
+            uploadLabel.classList.remove("has-files");
+            fileHint.textContent = "Birden fazla fotoğraf seçebilirsiniz";
+            sendBtn.disabled = true;
+        } else {
+            showStatus(data.message || "Yükleme sırasında bir sorun oluştu", "error");
+            sendBtn.disabled = false;
+        }
+    };
+
+    xhr.onerror = () => {
+        progressWrap.style.display = "none";
+        showStatus("Bağlantı hatası, tekrar deneyin", "error");
+        sendBtn.disabled = false;
+    };
+
+    xhr.send(formData);
+}
+
+function showStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className = type;
+}
+
+// --- Basit konfeti animasyonu (harici kütüphane gerekmez) ---
+const canvas = document.getElementById("confetti-canvas");
+const ctx = canvas.getContext("2d");
+let confettiPieces = [];
+let confettiAnimId = null;
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+const confettiColors = ["#C9A66B", "#9C7A3C", "#F4E3DE", "#E8B4A2", "#FFFDF9", "#B8860B"];
+
+function fireConfetti() {
+    confettiPieces = [];
+    const pieceCount = 140;
+    for (let i = 0; i < pieceCount; i++) {
+        confettiPieces.push({
+            x: canvas.width / 2,
+            y: canvas.height / 3,
+            vx: (Math.random() - 0.5) * 14,
+            vy: Math.random() * -12 - 4,
+            size: Math.random() * 7 + 4,
+            color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 12,
+            gravity: 0.35 + Math.random() * 0.15,
+            opacity: 1,
+        });
+    }
+    if (!confettiAnimId) animateConfetti();
+}
+
+function animateConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let stillActive = false;
+
+    confettiPieces.forEach((p) => {
+        p.vy += p.gravity;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.rotationSpeed;
+        if (p.y > canvas.height * 0.85) p.opacity -= 0.02;
+
+        if (p.opacity > 0) {
+            stillActive = true;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate((p.rotation * Math.PI) / 180);
+            ctx.globalAlpha = Math.max(p.opacity, 0);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+            ctx.restore();
+        }
+    });
+
+    if (stillActive) {
+        confettiAnimId = requestAnimationFrame(animateConfetti);
+    } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confettiAnimId = null;
+    }
+}
+</script>
+
+</body>
+</html>
