@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Selenay & Ahmet Berat — Düğün Fotoğrafları</title>
+<title>Selenay & Ahmet — Düğün Fotoğrafları</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -118,6 +118,25 @@
     }
 
     input[type="text"]:focus {
+        border-color: var(--gold);
+    }
+
+    textarea {
+        width: 100%;
+        font-family: 'Jost', sans-serif;
+        font-size: 15px;
+        padding: 13px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--ivory);
+        color: var(--charcoal);
+        margin-bottom: 20px;
+        outline: none;
+        resize: none;
+        transition: border-color 0.2s;
+    }
+
+    textarea:focus {
         border-color: var(--gold);
     }
 
@@ -240,12 +259,15 @@
 
 <div class="card">
     <div class="monogram">Düğünümüze Hoş Geldiniz</div>
-    <h1>Selenay<span class="amp">&amp;</span>Ahmet Berat</h1>
+    <h1>Selenay<span class="amp">&amp;</span>Ahmet</h1>
     <div class="divider"></div>
     <p class="subtitle">O günden aklınızda kalan anları bizimle paylaşın 💛</p>
 
     <label class="field-label" for="guestName">İsminiz (isteğe bağlı)</label>
     <input type="text" id="guestName" placeholder="Adınız Soyadınız">
+
+    <label class="field-label" for="guestMessage">Kutlama mesajınız (isteğe bağlı)</label>
+    <textarea id="guestMessage" placeholder="Sizi çok seviyoruz, nice mutlu yıllara 💛" maxlength="300" rows="3"></textarea>
 
     <input type="file" id="files" accept="image/*" multiple>
     <label for="files" class="upload-btn" id="uploadLabel">
@@ -302,7 +324,9 @@ function uploadPhotos() {
 
     const formData = new FormData();
     const name = document.getElementById("guestName").value.trim();
+    const message = document.getElementById("guestMessage").value.trim();
     if (name) formData.append("name", name);
+    if (message) formData.append("message", message);
     for (let i = 0; i < files.length; i++) {
         formData.append("files", files[i]);
     }
@@ -335,6 +359,7 @@ function uploadPhotos() {
             fireConfetti();
             filesInput.value = "";
             document.getElementById("guestName").value = "";
+            document.getElementById("guestMessage").value = "";
             uploadLabel.classList.remove("has-files");
             fileHint.textContent = "Birden fazla fotoğraf seçebilirsiniz";
             sendBtn.disabled = true;

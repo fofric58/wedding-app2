@@ -47,6 +47,17 @@
         margin: 0 auto 20px;
         color: #6B655C;
         font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .download-btn {
+        color: #fff;
+        background: var(--gold-dark);
+        text-decoration: none;
+        font-size: 13.5px;
+        padding: 9px 18px;
+        border-radius: 999px;
     }
     .grid {
         max-width: 1100px;
@@ -61,12 +72,32 @@
         overflow: hidden;
         border: 1px solid var(--line);
         box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+        position: relative;
     }
     .photo-card img {
         width: 100%;
         height: 190px;
         object-fit: cover;
         display: block;
+    }
+    .delete-form {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+    }
+    .delete-btn {
+        background: rgba(51,48,43,0.55);
+        color: #fff;
+        border: none;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-size: 14px;
+        cursor: pointer;
+        line-height: 1;
+    }
+    .delete-btn:hover {
+        background: #b5504a;
     }
     .photo-card .filename {
         font-size: 11px;
@@ -78,12 +109,20 @@
         font-size: 13.5px;
         font-weight: 500;
         color: var(--gold-dark);
-        padding: 0 10px 10px;
+        padding: 0 10px 4px;
     }
     .photo-card .guest-name.unknown {
         color: #b5aa8f;
         font-weight: 400;
         font-style: italic;
+    }
+    .photo-card .guest-message {
+        font-size: 12.5px;
+        color: var(--charcoal);
+        padding: 0 10px 8px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-break: break-word;
     }
     .empty {
         max-width: 1100px;
@@ -100,17 +139,29 @@
     <a class="logout" href="/logout">Çıkış Yap</a>
 </header>
 
-<div class="count">{{ photos|length }} fotoğraf</div>
+<div class="count">
+    <span>{{ photos|length }} fotoğraf</span>
+    {% if photos %}
+        <a class="download-btn" href="/panel/download-all">⬇️ Tümünü İndir (ZIP)</a>
+    {% endif %}
+</div>
 
 {% if photos %}
 <div class="grid">
     {% for photo in photos %}
     <div class="photo-card">
         <img src="/uploads/{{ photo.filename }}" loading="lazy" alt="{{ photo.filename }}">
+        <form class="delete-form" method="POST" action="/panel/delete/{{ photo.filename }}"
+              onsubmit="return confirm('Bu fotoğrafı silmek istediğinize emin misiniz?');">
+            <button type="submit" class="delete-btn" title="Sil">✕</button>
+        </form>
         {% if photo.guest_name %}
             <div class="guest-name">👤 {{ photo.guest_name }}</div>
         {% else %}
             <div class="guest-name unknown">İsimsiz</div>
+        {% endif %}
+        {% if photo.guest_message %}
+            <div class="guest-message">💌 {{ photo.guest_message }}</div>
         {% endif %}
         <div class="filename">{{ photo.filename }}</div>
     </div>
