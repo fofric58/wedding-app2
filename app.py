@@ -1,10 +1,12 @@
 import os
 import re
+import io
 import uuid
+import zipfile
 import sqlite3
 import secrets
 import requests
-from flask import Flask, render_template, request, redirect, session, send_from_directory, jsonify
+from flask import Flask, render_template, request, redirect, session, send_from_directory, send_file, jsonify
 from werkzeug.utils import secure_filename
 from datetime import datetime
 
@@ -16,7 +18,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
-ADMIN_PASS = os.environ.get("ADMIN_PASS", "fofric")
+ADMIN_PASS = os.environ.get("ADMIN_PASS", "1234")
 
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -45,9 +47,14 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 filename TEXT UNIQUE NOT NULL,
                 guest_name TEXT,
+                guest_message TEXT,
                 uploaded_at TEXT NOT NULL
             )
         """)
+        # Eski veritabanlarında guest_message sütunu yoksa ekle (geriye dönük uyumluluk)
+        existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(photos)")}
+        if "guest_message" not in existing_cols:
+            conn.execute("ALTER TABLE photos ADD COLUMN guest_message TEXT")
 
 
 init_db()
@@ -62,6 +69,13 @@ def clean_guest_name(raw_name):
     name = re.sub(r"\s+", " ", name)
     return name[:60]
 
+
+def clean_guest_message(raw_message):
+    """Kutlama mesajını temizler: satır sonlarını korur ama uzunluğu sınırlar."""
+    message = raw_message.strip()
+    message = re.sub(r"\r\n", "\n", message)
+    return message[:300]
+
 # --- Telegram Bot -------------------------------------------------------
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
@@ -71,19 +85,21 @@ def telegram_enabled():
     return bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID)
 
 
-def send_to_telegram(filepath, filename, guest_name=""):
+def send_to_telegram(filepath, filename, guest_name="", guest_message=""):
     """Fotoğrafı Telegram'a 'document' olarak gönderir (kalite kaybı olmadan)."""
     if not telegram_enabled():
         return False, "Telegram yapılandırılmamış"
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
     caption = f"📸 Yeni fotoğraf: {guest_name}" if guest_name else "📸 Yeni fotoğraf yüklendi"
+    if guest_message:
+        caption += f"\n💌 {guest_message}"
 
     try:
         with open(filepath, "rb") as f:
             response = requests.post(
                 url,
-                data={"chat_id": TELEGRAM_CHAT_ID, "caption": caption},
+                data={"chat_id": TELEGRAM_CHAT_ID, "caption": caption[:1024]},
                 files={"document": (filename, f)},
                 timeout=30,
             )
@@ -120,6 +136,7 @@ def upload():
 
     files = request.files.getlist("files")
     guest_name = clean_guest_name(request.form.get("name", ""))
+    guest_message = clean_guest_message(request.form.get("message", ""))
 
     if not files or all(f.filename == "" for f in files):
         return jsonify({"success": False, "message": "Lütfen fotoğraf seçin"}), 400
@@ -145,13 +162,13 @@ def upload():
             saved_count += 1
 
             conn.execute(
-                "INSERT INTO photos (filename, guest_name, uploaded_at) VALUES (?, ?, ?)",
-                (unique_name, guest_name, datetime.now().isoformat()),
+                "INSERT INTO photos (filename, guest_name, guest_message, uploaded_at) VALUES (?, ?, ?, ?)",
+                (unique_name, guest_name, guest_message, datetime.now().isoformat()),
             )
 
             # Telegram'a orijinal kalitede belge olarak gönder
             if telegram_enabled():
-                send_to_telegram(filepath, unique_name, guest_name)
+                send_to_telegram(filepath, unique_name, guest_name, guest_message)
 
     if saved_count == 0:
         return jsonify({"success": False, "message": "Hiçbir fotoğraf yüklenemedi", "errors": errors}), 400
@@ -183,7 +200,7 @@ def panel():
 
     with get_db() as conn:
         rows = conn.execute(
-            "SELECT filename, guest_name, uploaded_at FROM photos ORDER BY uploaded_at DESC"
+            "SELECT filename, guest_name, guest_message, uploaded_at FROM photos ORDER BY uploaded_at DESC"
         ).fetchall()
 
     photos = []
@@ -193,6 +210,7 @@ def panel():
             photos.append({
                 "filename": row["filename"],
                 "guest_name": row["guest_name"] or "",
+                "guest_message": row["guest_message"] or "",
                 "uploaded_at": row["uploaded_at"],
             })
             known_files.add(row["filename"])
@@ -201,9 +219,46 @@ def panel():
     # yine de listeye ekle, sadece isim bilgisi olmadan.
     for f in sorted(disk_files - known_files, reverse=True):
         if allowed_file(f):
-            photos.append({"filename": f, "guest_name": "", "uploaded_at": ""})
+            photos.append({"filename": f, "guest_name": "", "guest_message": "", "uploaded_at": ""})
 
     return render_template("admin.html", photos=photos)
+
+
+@app.route("/panel/download-all")
+def download_all():
+    if not session.get("admin"):
+        return redirect("/admin")
+
+    disk_files = sorted(f for f in os.listdir(app.config["UPLOAD_FOLDER"]) if allowed_file(f))
+    if not disk_files:
+        return redirect("/panel")
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for filename in disk_files:
+            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+            zf.write(filepath, arcname=filename)
+    buffer.seek(0)
+
+    zip_name = f"selenay-ahmet-fotograflar-{datetime.now().strftime('%Y%m%d-%H%M')}.zip"
+    return send_file(buffer, mimetype="application/zip", as_attachment=True, download_name=zip_name)
+
+
+@app.route("/panel/delete/<path:filename>", methods=["POST"])
+def delete_photo(filename):
+    if not session.get("admin"):
+        return redirect("/admin")
+
+    safe_name = secure_filename(filename)
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], safe_name)
+
+    if os.path.exists(filepath) and allowed_file(safe_name):
+        os.remove(filepath)
+
+    with get_db() as conn:
+        conn.execute("DELETE FROM photos WHERE filename = ?", (safe_name,))
+
+    return redirect("/panel")
 
 
 @app.route("/uploads/<path:filename>")
