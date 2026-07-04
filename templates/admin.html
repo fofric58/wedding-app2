@@ -71,8 +71,19 @@
     .photo-card .filename {
         font-size: 11px;
         color: #8a8478;
-        padding: 8px 10px;
+        padding: 8px 10px 2px;
         word-break: break-all;
+    }
+    .photo-card .guest-name {
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--gold-dark);
+        padding: 0 10px 10px;
+    }
+    .photo-card .guest-name.unknown {
+        color: #b5aa8f;
+        font-weight: 400;
+        font-style: italic;
     }
     .empty {
         max-width: 1100px;
@@ -89,14 +100,19 @@
     <a class="logout" href="/logout">Çıkış Yap</a>
 </header>
 
-<div class="count">{{ files|length }} fotoğraf</div>
+<div class="count">{{ photos|length }} fotoğraf</div>
 
-{% if files %}
+{% if photos %}
 <div class="grid">
-    {% for file in files %}
+    {% for photo in photos %}
     <div class="photo-card">
-        <img src="/uploads/{{ file }}" loading="lazy" alt="{{ file }}">
-        <div class="filename">{{ file }}</div>
+        <img src="/uploads/{{ photo.filename }}" loading="lazy" alt="{{ photo.filename }}">
+        {% if photo.guest_name %}
+            <div class="guest-name">👤 {{ photo.guest_name }}</div>
+        {% else %}
+            <div class="guest-name unknown">İsimsiz</div>
+        {% endif %}
+        <div class="filename">{{ photo.filename }}</div>
     </div>
     {% endfor %}
 </div>

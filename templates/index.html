@@ -338,8 +338,11 @@ function uploadPhotos() {
             uploadLabel.classList.remove("has-files");
             fileHint.textContent = "Birden fazla fotoğraf seçebilirsiniz";
             sendBtn.disabled = true;
+        } else if (xhr.status === 413) {
+            showStatus(data.message || "Fotoğraflar çok büyük, daha az seçip tekrar deneyin", "error");
+            sendBtn.disabled = false;
         } else {
-            showStatus(data.message || "Yükleme sırasında bir sorun oluştu", "error");
+            showStatus(data.message || `Yükleme sırasında bir sorun oluştu (${xhr.status})`, "error");
             sendBtn.disabled = false;
         }
     };
